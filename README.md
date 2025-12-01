@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="#">
-    Platzi
+    Structs and Groups
   </a>
 </h1>
 
