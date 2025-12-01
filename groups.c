@@ -1,31 +1,74 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
-#define MAX_ELEMENTS 10
 
 struct group
 {
-    char name[50]; // Nombre del grupo
-    int order; // Número de elementos
-    int identity; // Elemento identidad
-    int elements[MAX_ELEMENTS]; // Elementos del grupo 
-    int operation[MAX_ELEMENTS][MAX_ELEMENTS];
-
+    char name[50];
+    int order;
+    int identity;
+    int *elements;
+    int **operation;
 };
 
-
-int is_identity(struct group *G, int e) // verificar identidad
+/* Construye el grupo ciclico Z_n */
+void build_Zn(struct group *G, int n)
 {
-    for (int i = 0; i < G -> order; i++)
+    G->order = n;
+    G->identity = 0;
+    strcpy(G->name, "Grupo ciclico Z_n");
+
+    G->elements = malloc(n * sizeof(int));
+    G->operation = malloc(n * sizeof(int *));
+
+    for (int i = 0; i < n; i++)
     {
-        if ( G-> operation[e][i] != i || G -> operation[e][i] != i)
-        return 0;
+        G->elements[i] = i;
+        G->operation[i] = malloc(n * sizeof(int));
+    }
+
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            G->operation[i][j] = (i + j) % n;
+}
+
+/* Imprime la tabla de Cayley */
+void print_table(struct group *G)
+{
+    printf("\nTabla de Cayley:\n\n");
+
+    printf("  * |");
+    for (int i = 0; i < G->order; i++)
+        printf(" %2d", G->elements[i]);
+    printf("\n");
+
+    printf("----");
+    for (int i = 0; i < G->order; i++)
+        printf("---");
+    printf("\n");
+
+    for (int i = 0; i < G->order; i++)
+    {
+        printf(" %2d |", G->elements[i]);
+        for (int j = 0; j < G->order; j++)
+            printf(" %2d", G->operation[i][j]);
+        printf("\n");
+    }
+}
+
+/* Verifica si un elemento es identidad */
+int is_identity(struct group *G, int e)
+{
+    for (int i = 0; i < G->order; i++)
+    {
+        if (G->operation[e][i] != i || G->operation[i][e] != i)
+            return 0;
     }
     return 1;
 }
 
-int inverse_of(struct group *G, int a) //Encontrar inversos
+/* Encuentra el inverso de un elemento */
+int inverse_of(struct group *G, int a)
 {
     for (int i = 0; i < G->order; i++)
     {
@@ -33,75 +76,59 @@ int inverse_of(struct group *G, int a) //Encontrar inversos
             G->operation[i][a] == G->identity)
             return i;
     }
-    return -1; // No tiene inverso
+    return -1;
+}
+
+/* Libera la memoria */
+void free_group(struct group *G)
+{
+    for (int i = 0; i < G->order; i++)
+        free(G->operation[i]);
+
+    free(G->operation);
+    free(G->elements);
 }
 
 int main(void)
 {
-    struct group Z5;
+    struct group G;
+    int n;
 
-    strcpy(Z5.name, "Grupo ciclico Z5");
-    Z5.order = 5;
-    Z5.identity = 0;
-
-    /* Definimos los elementos */
-    for (int i = 0; i < Z5.order; i++)
+    printf("Ingrese el orden del grupo (n): ");
+    if (scanf("%d", &n) != 1 || n <= 0)
     {
-        Z5.elements[i] = i;
+        printf("Entrada invalida.\n");
+        return 1;
     }
 
-    /* Definimos la operación: suma módulo 5 */
-    for (int i = 0; i < Z5.order; i++)
+    build_Zn(&G, n);
+
+    printf("\nNombre del grupo: %s\n", G.name);
+    printf("Orden del grupo: %d\n", G.order);
+    printf("Identidad declarada: %d\n", G.identity);
+
+    /* Tabla */
+    print_table(&G);
+
+    /* Verificacion de identidad */
+    printf("\nVerificacion del elemento identidad:\n");
+    for (int i = 0; i < G.order; i++)
     {
-        for (int j = 0; j < Z5.order; j++)
-        {
-            Z5.operation[i][j] = (i + j) % Z5.order;
-        }
+        if (is_identity(&G, i))
+            printf("Elemento %d ES la identidad\n", i);
     }
 
-    /* Información básica del grupo */
-    printf("Nombre del grupo: %s\n", Z5.name);
-    printf("Orden del grupo: %d\n", Z5.order);
-    printf("Identidad declarada: %d\n\n", Z5.identity);
-
-     printf("Tabla de operacion:\n");
-    for (int i = 0; i < Z5.order; i++)
+    /* Inversos */
+    printf("\nInversos del grupo:\n");
+    for (int i = 0; i < G.order; i++)
     {
-        for (int j = 0; j < Z5.order; j++)
-        {
-            printf("%d ", Z5.operation[i][j]);
-        }
-        printf("\n");
-    }
-
-    /* Verificación de la identidad */
-    printf("Verificacion de identidad:\n");
-    for (int i = 0; i < Z5.order; i++)
-    {
-        if (is_identity(&Z5, i))
-        {
-            printf("El elemento %d ES la identidad\n", i);
-        }
-        else
-        {
-            printf("El elemento %d NO es la identidad\n", i);
-        }
-    }
-
-    /* Cálculo de inversos */
-    printf("\nInversos en el grupo:\n");
-    for (int i = 0; i < Z5.order; i++)
-    {
-        int inv = inverse_of(&Z5, i);
+        int inv = inverse_of(&G, i);
         if (inv != -1)
-        {
-            printf("El inverso de %d es %d\n", i, inv);
-        }
+            printf("Inverso de %d es %d\n", i, inv);
         else
-        {
-            printf("El elemento %d no tiene inverso\n", i);
-        }
+            printf("Elemento %d no tiene inverso\n", i);
     }
 
+    free_group(&G);
     return 0;
 }
