@@ -22,6 +22,7 @@ int greedyChange(int coinSet[], int n, int N){
         int res = greedyChange(coinSet, n, N - coinSet[i]);
         if(res != INT_MAX)
             coins = min(coins,res+1);
+        
     }
 
     return coins;
